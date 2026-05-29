@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import { X } from "lucide-react";
 import { parseXlmToStroops } from "@/lib/formatters";
 import {
@@ -31,10 +31,26 @@ export function WithdrawalModal({
   balance,
   isProposing,
 }: WithdrawalModalProps) {
+  const titleId = useId();
   const [to, setTo] = useState("");
   const [amount, setAmount] = useState("");
   const [memo, setMemo] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isProposing) {
+        handleClose();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, isProposing]);
 
   if (!isOpen) return null;
 
@@ -91,13 +107,28 @@ export function WithdrawalModal({
           : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+      role="presentation"
+      onClick={() => {
+        if (!isProposing) {
+          handleClose();
+        }
+      }}
+    >
+      <div 
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Propose Withdrawal</h2>
+          <h2 id={titleId} className="text-lg font-semibold">Propose Withdrawal</h2>
           <button
             onClick={handleClose}
-            className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-full transition-colors"
+            disabled={isProposing}
+            className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Close modal"
           >
             <X size={20} />

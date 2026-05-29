@@ -138,6 +138,12 @@ export const TreasuryCard: React.FC<TreasuryCardProps> = ({
               {approvals.length} / {threshold}
             </span>
           </div>
+          {/* Explicit approval progress text for mobile/small screens */}
+          <p className="text-xs text-gray-400 mt-0.5">
+            {isReadyToExecute
+              ? "Ready to execute"
+              : `${threshold - approvals.length} approval${threshold - approvals.length === 1 ? "" : "s"} needed`}
+          </p>
         </div>
 
         <div className="flex gap-2 items-center">

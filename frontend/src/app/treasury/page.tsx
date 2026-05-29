@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTreasury } from "@/hooks/useTreasury";
 import { useFreighter } from "@/hooks/useFreighter";
@@ -55,6 +55,22 @@ export default function TreasuryPage() {
   >("pending");
   const threshold = config?.threshold ?? 0;
   const signerCount = config?.signerCount ?? 0;
+
+  // Escape key handler for transaction details drawer
+  useEffect(() => {
+    if (!selectedTx) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedTx(null);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedTx]);
 
   const pendingTxs = useMemo(
     () => transactions.filter((transaction) => !transaction.executed),

@@ -37,6 +37,12 @@ const CreateProposalModal = dynamic(() =>
     (module) => module.CreateProposalModal,
   ),
 );
+const StatsCardSkeleton = dynamic(() =>
+  import("@/components/Skeletons").then((module) => module.StatsCardSkeleton),
+);
+const ListCardSkeleton = dynamic(() =>
+  import("@/components/Skeletons").then((module) => module.ListCardSkeleton),
+);
 
 const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: "newest", label: "Newest" },
@@ -159,22 +165,33 @@ export default function GovernancePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card text-center">
-          <p className="text-sm text-gray-400">Total Proposals</p>
-          <p className="text-2xl font-bold text-white mt-1">{config?.proposalCount ?? proposals.length}</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-sm text-gray-400">Active</p>
-          <p className="text-2xl font-bold text-green-400 mt-1">{proposals.filter((p) => p.status === "Active").length}</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-sm text-gray-400">Quorum %</p>
-          <p className="text-2xl font-bold text-primary-400 mt-1">{config?.quorumPercent ?? 0}%</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-sm text-gray-400">Members</p>
-          <p className="text-2xl font-bold text-white mt-1">{config?.memberCount ?? 0}</p>
-        </div>
+        {isLoading && proposals.length === 0 ? (
+          <>
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+          </>
+        ) : (
+          <>
+            <div className="card text-center">
+              <p className="text-sm text-gray-400">Total Proposals</p>
+              <p className="text-2xl font-bold text-white mt-1">{config?.proposalCount ?? proposals.length}</p>
+            </div>
+            <div className="card text-center">
+              <p className="text-sm text-gray-400">Active</p>
+              <p className="text-2xl font-bold text-green-400 mt-1">{proposals.filter((p) => p.status === "Active").length}</p>
+            </div>
+            <div className="card text-center">
+              <p className="text-sm text-gray-400">Quorum %</p>
+              <p className="text-2xl font-bold text-primary-400 mt-1">{config?.quorumPercent ?? 0}%</p>
+            </div>
+            <div className="card text-center">
+              <p className="text-sm text-gray-400">Members</p>
+              <p className="text-2xl font-bold text-white mt-1">{config?.memberCount ?? 0}</p>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="card flex flex-col md:flex-row gap-4 md:items-end">
@@ -220,10 +237,12 @@ export default function GovernancePage() {
       <div>
         <h2 className="text-xl font-semibold text-white mb-4">Active Proposals</h2>
         <div className="space-y-4">
-          {isLoading ? (
-            <div className="card">
-              <p className="text-gray-500 text-center py-8">Loading proposals...</p>
-            </div>
+          {isLoading && proposals.length === 0 ? (
+            <>
+              <ListCardSkeleton />
+              <ListCardSkeleton />
+              <ListCardSkeleton />
+            </>
           ) : activeProposals.length === 0 ? (
             <div className="card">
               <p className="text-gray-500 text-center py-8">No active proposals for selected filters</p>
@@ -239,7 +258,12 @@ export default function GovernancePage() {
       <div>
         <h2 className="text-xl font-semibold text-white mb-4">Past Proposals</h2>
         <div className="space-y-4">
-          {pastProposals.length === 0 ? (
+          {isLoading && proposals.length === 0 ? (
+            <>
+              <ListCardSkeleton />
+              <ListCardSkeleton />
+            </>
+          ) : pastProposals.length === 0 ? (
             <div className="card">
               <p className="text-gray-500 text-center py-8">No past proposals for selected filters</p>
             </div>
