@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 const variants = {
   hidden: { opacity: 0, x: -20, y: 0 },
@@ -9,6 +9,12 @@ const variants = {
 };
 
 export default function Template({ children }: { children: React.ReactNode }) {
+  const prefersReducedMotion = useReducedMotion();
+
+  if (prefersReducedMotion) {
+    return <main>{children}</main>;
+  }
+
   return (
     <motion.main
       variants={variants}

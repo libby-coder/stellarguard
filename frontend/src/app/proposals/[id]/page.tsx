@@ -32,10 +32,14 @@ export default function ProposalDetailPage({
   const [countdown, setCountdown] = useState("Unknown");
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [loadError, setLoadError] = useState<unknown>(null);
   const [nowMs, setNowMs] = useState(Date.now());
 
+  const isValidId = Number.isFinite(id) && id > 0 && !Number.isNaN(id);
+
   const loadProposal = useCallback(async () => {
-    if (!Number.isFinite(id)) return;
+    setLoadError(null);
+    if (!isValidId) return;
     await getConfig();
     const [p, voted] = await Promise.all([
       getProposal(id),
@@ -44,10 +48,11 @@ export default function ProposalDetailPage({
     setProposal(p);
     setViewerHasVoted(voted);
     clearPendingVote(id);
-  }, [clearPendingVote, currentAddress, getConfig, getProposal, hasVoted, id]);
+  }, [clearPendingVote, currentAddress, getConfig, getProposal, hasVoted, id, isValidId]);
 
   useEffect(() => {
-    loadProposal().catch(() => {
+    loadProposal().catch((err) => {
+      setLoadError(err);
       toast.error("Failed to load proposal details");
     });
   }, [loadProposal]);
@@ -138,6 +143,33 @@ export default function ProposalDetailPage({
           ? "Voting is closed for this proposal."
           : "Your vote will be submitted on-chain immediately.";
 
+  if (!isValidId) {
+    return (
+      <div className="space-y-8 pb-32 md:pb-0">
+        <Link
+          href="/governance"
+          className="text-primary-400 hover:text-primary-300 text-sm"
+        >
+          ← Back to Governance
+        </Link>
+        <div className="card mx-auto max-w-2xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-400">
+            Invalid Proposal
+          </p>
+          <h1 className="mt-3 text-3xl font-bold text-white">
+            Proposal Not Found
+          </h1>
+          <p className="mt-3 text-sm text-gray-400">
+            The proposal ID &ldquo;{params.id}&rdquo; is not valid. Proposal IDs must be positive numbers.
+          </p>
+          <Link href="/governance" className="btn-primary mt-6 inline-block">
+            Browse Proposals
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 pb-32 md:pb-0">
       {/* Back Link */}
@@ -147,6 +179,29 @@ export default function ProposalDetailPage({
       >
         ← Back to Governance
       </Link>
+
+      {!!loadError && (
+        <div className="card mx-auto max-w-2xl text-center border-red-500/40">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-400">
+            Route Error
+          </p>
+          <h1 className="mt-3 text-3xl font-bold text-white">
+            Proposal unavailable
+          </h1>
+          <p className="mt-3 text-sm text-gray-400">
+            This proposal route failed to load. Retry to request the proposal details again.
+          </p>
+          <button
+            className="btn-primary mt-6"
+            onClick={() => loadProposal().catch((err) => {
+              setLoadError(err);
+              toast.error("Failed to load proposal details");
+            })}
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Proposal Header */}
       <div className="card">

@@ -91,13 +91,19 @@ export default function GovernancePage() {
         }
 
         const ids = Array.from({ length: count }, (_, i) => i + 1);
+
+        // Fetch proposals in bounded parallel batches (concurrency limit = 5)
         const loaded: GovernanceProposal[] = [];
-        for (const id of ids) {
-          try {
-            const proposal = await getProposal(id);
-            loaded.push(proposal);
-          } catch {
-            // Ignore sparse/unavailable ids from contract history.
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+          const batch = ids.slice(i, i + BATCH_SIZE);
+          const results = await Promise.allSettled(
+            batch.map((id) => getProposal(id)),
+          );
+          for (const result of results) {
+            if (result.status === "fulfilled") {
+              loaded.push(result.value);
+            }
           }
         }
 
