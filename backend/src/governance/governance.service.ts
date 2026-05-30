@@ -101,22 +101,35 @@ export class GovernanceService {
       throw new Error("GOVERNANCE_CONTRACT_ID not configured");
     }
 
-    // In a real implementation, this would query the contract or indexed data
-    // For now, return a mock proposal
+    const result = await pool.query(
+      `SELECT * FROM events 
+       WHERE contract_id = $1 
+       AND topic_2 = $2 
+       AND event_data->>'proposal_id' = $3`,
+      [contractId, "propose", id],
+    );
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+    const eventData = row.event_data as Record<string, unknown>;
+
     return {
       id: parseInt(id),
-      title: "Sample Proposal",
-      description: "This is a sample proposal",
-      action: "Funding",
-      proposer: "GABC...",
-      votes_for: 5,
-      votes_against: 2,
-      total_votes: 7,
-      status: "Active",
-      created_at: Date.now(),
-      ends_at: Date.now() + 86400000,
-      amount: "1000000000",
-      target: "GDEF...",
+      title: (eventData.title as string) || "",
+      description: (eventData.description as string) || "",
+      action: (eventData.action as string) || "",
+      proposer: (eventData.proposer as string) || "",
+      votes_for: (eventData.votes_for as number) || 0,
+      votes_against: (eventData.votes_against as number) || 0,
+      total_votes: (eventData.total_votes as number) || 0,
+      status: (eventData.status as string) || "",
+      created_at: (eventData.created_at as number) || 0,
+      ends_at: (eventData.ends_at as number) || 0,
+      amount: (eventData.amount as string) || "0",
+      target: (eventData.target as string) || "",
     };
   }
 
