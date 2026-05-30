@@ -1,5 +1,5 @@
 import { Module, NestModule, MiddlewareConsumer } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_GUARD, APP_FILTER } from "@nestjs/core";
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { HealthController } from "./health/health.controller";
 import { TreasuryController } from "./treasury/treasury.controller";
@@ -12,6 +12,8 @@ import { ListenerService } from "./listener.service";
 import { ApiKeyGuard } from "./guards/api-key.guard";
 import { RequestLoggerMiddleware } from "./middleware/request-logger.middleware";
 import { CacheModule } from "./cache/cache.module";
+import { LoggerModule } from "./logger/logger.module";
+import { HttpExceptionFilter } from "./filters/http-exception.filter";
 
 @Module({
   imports: [
@@ -23,6 +25,7 @@ import { CacheModule } from "./cache/cache.module";
       },
     ]),
     CacheModule,
+    LoggerModule,
   ],
   controllers: [
     HealthController,
@@ -44,6 +47,11 @@ import { CacheModule } from "./cache/cache.module";
     {
       provide: APP_GUARD,
       useClass: ApiKeyGuard,
+    },
+    // Apply global exception filter with request ID
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
     },
   ],
 })

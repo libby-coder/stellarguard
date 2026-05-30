@@ -1,10 +1,13 @@
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
+import { RequestContextService } from '../logger/request-context.service';
 
 @Injectable()
 export class RequestLoggerMiddleware implements NestMiddleware {
   private readonly logger = new Logger('HTTP');
+
+  constructor(private readonly requestContext: RequestContextService) {}
 
   use(req: Request, res: Response, next: NextFunction): void {
     const { method, originalUrl, ip } = req;
@@ -13,18 +16,20 @@ export class RequestLoggerMiddleware implements NestMiddleware {
 
     res.setHeader('x-request-id', correlationId);
 
-    this.logger.log(`→ [${correlationId}] ${method} ${originalUrl} - ${ip}`);
+    this.requestContext.run({ requestId: correlationId }, () => {
+      this.logger.log(`→ [${correlationId}] ${method} ${originalUrl} - ${ip}`);
 
-    res.on('finish', () => {
-      const { statusCode } = res;
-      const duration = Date.now() - startTime;
-      const logLevel = statusCode >= 400 ? 'warn' : 'log';
+      res.on('finish', () => {
+        const { statusCode } = res;
+        const duration = Date.now() - startTime;
+        const logLevel = statusCode >= 400 ? 'warn' : 'log';
 
-      this.logger[logLevel](
-        `← [${correlationId}] ${method} ${originalUrl} ${statusCode} - ${duration}ms`,
-      );
+        this.logger[logLevel](
+          `← [${correlationId}] ${method} ${originalUrl} ${statusCode} - ${duration}ms`,
+        );
+      });
+
+      next();
     });
-
-    next();
   }
 }
